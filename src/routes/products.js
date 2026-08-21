@@ -11,6 +11,7 @@ const {
 } = require('../controllers/productController');
 const { authenticateAdmin } = require('../middleware/auth');
 const { protect } = require('../middleware/auth');
+const { productValidation } = require('../middleware/validate');
 const { upload } = require('../config/cloudinary');
 
 // Public
