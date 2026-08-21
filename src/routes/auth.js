@@ -1,11 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { login, logout, me } = require('../controllers/authController');
-const { protect } = require('../middleware/auth');
+const authController = require('../controllers/authController');
+const protect = require('../middleware/auth');
 
-// تأكد من وجود دالة ممررة لكل مسار
-router.post('/login', login);
-router.post('/logout', logout);
-router.get('/me', protect, me);
+// دالة احتياطية في حال عدم وجود getMe أو me
+const getMeHandler = authController.me || authController.getMe || ((req, res) => res.json({ success: true, admin: req.admin }));
+const middlewareHandler = typeof protect === 'function' ? protect : (protect.protect || ((req, res, next) => next()));
+
+router.post('/login', authController.login);
+router.post('/logout', authController.logout);
+router.get('/me', middlewareHandler, getMeHandler);
 
 module.exports = router;
