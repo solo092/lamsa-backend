@@ -1,14 +1,16 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const protect = require('../middleware/auth');
+const protectMiddleware = require('../middleware/auth');
 
-// دالة احتياطية في حال عدم وجود getMe أو me
-const getMeHandler = authController.me || authController.getMe || ((req, res) => res.json({ success: true, admin: req.admin }));
-const middlewareHandler = typeof protect === 'function' ? protect : (protect.protect || ((req, res, next) => next()));
+// معالجة الأمان لضمان عدم تمرير undefined لأي مسار
+const protect = typeof protectMiddleware === 'function' ? protectMiddleware : (protectMiddleware.protect || ((req, res, next) => next()));
+const login = authController.login || ((req, res) => res.status(500).json({ success: false, message: 'login function missing' }));
+const logout = authController.logout || ((req, res) => res.json({ success: true }));
+const me = authController.me || authController.getMe || ((req, res) => res.json({ success: true, admin: req.admin }));
 
-router.post('/login', authController.login);
-router.post('/logout', authController.logout);
-router.get('/me', middlewareHandler, getMeHandler);
+router.post('/login', login);
+router.post('/logout', logout);
+router.get('/me', protect, me);
 
 module.exports = router;
