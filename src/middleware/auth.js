@@ -3,12 +3,9 @@ const jwt = require('jsonwebtoken');
 const protect = (req, res, next) => {
   let token;
 
-  // 1. القراءة من الـ Authorization Header أولاً
   if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
     token = req.headers.authorization.split(' ')[1];
-  } 
-  // 2. القراءة من الـ Cookies كخيار ثانٍ
-  else if (req.cookies && req.cookies.token) {
+  } else if (req.cookies && req.cookies.token) {
     token = req.cookies.token;
   }
 
