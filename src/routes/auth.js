@@ -3,9 +3,8 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const protectMiddleware = require('../middleware/auth');
 
-// معالجة الأمان لضمان عدم تمرير undefined لأي مسار
 const protect = typeof protectMiddleware === 'function' ? protectMiddleware : (protectMiddleware.protect || ((req, res, next) => next()));
-const login = authController.login || ((req, res) => res.status(500).json({ success: false, message: 'login function missing' }));
+const login = authController.login || ((req, res) => res.status(500).json({ success: false }));
 const logout = authController.logout || ((req, res) => res.json({ success: true }));
 const me = authController.me || authController.getMe || ((req, res) => res.json({ success: true, admin: req.admin }));
 
