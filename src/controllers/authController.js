@@ -1,6 +1,9 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const { query } = require('../db');
+const db = require('../db/index.js') || require('../db');
+
+// استخراج دالة query بأمان
+const query = db.query || db;
 
 const login = async (req, res) => {
   try {
