@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
-// استيراد وحدة قاعدة البيانات مباشرة
-const db = require('../db');
+// الرجوع خطوتين للخلف للخروج من src/src/controllers والوصول إلى src/db
+const db = require('../../db');
 const query = db.query || db;
 
 // تسجيل الدخول
