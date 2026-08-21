@@ -2,7 +2,6 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const { query } = require('../db');
 
-// تسجيل الدخول
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -46,7 +45,6 @@ const login = async (req, res) => {
   }
 };
 
-// تسجيل الخروج
 const logout = async (req, res) => {
   try {
     res.clearCookie('token');
@@ -56,7 +54,6 @@ const logout = async (req, res) => {
   }
 };
 
-// التحقق من بيانات الأدمن الحالي
 const me = async (req, res) => {
   try {
     const result = await query('SELECT id, email, name FROM admins WHERE id = $1', [req.admin.id]);
