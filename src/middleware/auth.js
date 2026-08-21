@@ -22,6 +22,5 @@ const protect = (req, res, next) => {
   }
 };
 
-// إرجاع protect بكلا الطريقتين (دالة مباشرة + Object) لتوافق جميع ملفات الـ Routes
 module.exports = protect;
 module.exports.protect = protect;
