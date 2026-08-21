@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 
 // استدعاء ملف الـ db الموجود في المجلد المباشر الأعلى
-const db = require('../db');
+const db = require('../config/db');
 const query = db.query || db;
 
 // تسجيل الدخول
