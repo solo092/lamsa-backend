@@ -10,7 +10,7 @@ const {
   getAdminProducts,
 } = require('../controllers/productController');
 const { authenticateAdmin } = require('../middleware/auth');
-const { protect } = require('../middleware/validate');
+const { protect } = require('../middleware/auth');
 const { upload } = require('../config/cloudinary');
 
 // Public
