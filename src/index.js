@@ -12,34 +12,19 @@ const orderRoutes = require('./routes/orders');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security
+// Security (تعطيل القيود التي تمنع طلبات الهواتف)
 app.use(helmet({
-  crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginResourcePolicy: false,
+  crossOriginEmbedderPolicy: false,
 }));
 
-// قائمة الدومينات المسموح لها مع مرونة كاملة للـ Production
-const allowedOrigins = [
-  'https://lamsashababiya.online',
-  'https://www.lamsashababiya.online',
-  'http://localhost:5173',
-  'http://localhost:3000'
-];
-
+// CORS مسموح للجميع لحل أي تعارض شبكة فوراً
 app.use(cors({
-  origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.lamsashababiya.online')) {
-      callback(null, true);
-    } else {
-      callback(null, true);
-    }
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
-
-// معالجة طلبات OPTIONS لجميع المسارات (ضروري جداً لمصادقة الموبايل)
-app.options('*', cors());
 
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
