@@ -1,16 +1,8 @@
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
-const path = require('path');
 
-// جلب قاعدة البيانات مباشرة من جذر المشروع لتفادي تكرار src/src
-let query;
-try {
-  const dbModule = require(path.join(process.cwd(), 'src/db'));
-  query = dbModule.query || dbModule;
-} catch (e) {
-  const dbModule = require(path.join(process.cwd(), 'db'));
-  query = dbModule.query || dbModule;
-}
+// استيراد قاعدة البيانات المباشر من مجلد db المجاور
+const { query } = require('../db/index.js');
 
 // تسجيل الدخول
 const login = async (req, res) => {
