@@ -17,20 +17,26 @@ app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
 
-// CORS
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || process.env.CLIENT_URL || 'http://localhost:5173')
-  .split(',')
-  .map((o) => o.trim());
+// قائمة الدومينات المسموح لها مع مرونة كاملة للـ Production
+const allowedOrigins = [
+  'https://lamsashababiya.online',
+  'https://www.lamsashababiya.online',
+  'http://localhost:5173',
+  'http://localhost:3000'
+];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+    // السماح بالطلبات التي لا تملك origin (مثل تطبيقات الموبايل أو curl) أو الدومينات المعتمدة
+    if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.lamsashababiya.online')) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(null, true); // السماح بمرور الطلب لضمان عدم حظر أي هاتف
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
 
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
