@@ -2,19 +2,14 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const path = require('path');
 
-// استيراد قاعدة البيانات عبر المسار المطلق للمشروع لتفادي اختلاف المجلدات
+// جلب قاعدة البيانات مباشرة من جذر المشروع لتفادي تكرار src/src
 let query;
 try {
-  const dbModule = require(path.join(__dirname, '../db'));
+  const dbModule = require(path.join(process.cwd(), 'src/db'));
   query = dbModule.query || dbModule;
 } catch (e) {
-  try {
-    const dbModule = require(path.join(__dirname, '../../db'));
-    query = dbModule.query || dbModule;
-  } catch (err) {
-    const dbModule = require('../db');
-    query = dbModule.query || dbModule;
-  }
+  const dbModule = require(path.join(process.cwd(), 'db'));
+  query = dbModule.query || dbModule;
 }
 
 // تسجيل الدخول
