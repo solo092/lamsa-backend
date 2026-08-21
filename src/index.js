@@ -27,17 +27,19 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: (origin, callback) => {
-    // السماح بالطلبات التي لا تملك origin (مثل تطبيقات الموبايل أو curl) أو الدومينات المعتمدة
     if (!origin || allowedOrigins.includes(origin) || origin.endsWith('.lamsashababiya.online')) {
       callback(null, true);
     } else {
-      callback(null, true); // السماح بمرور الطلب لضمان عدم حظر أي هاتف
+      callback(null, true);
     }
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
 }));
+
+// معالجة طلبات OPTIONS لجميع المسارات (ضروري جداً لمصادقة الموبايل)
+app.options('*', cors());
 
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
