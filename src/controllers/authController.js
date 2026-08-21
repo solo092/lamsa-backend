@@ -1,24 +1,24 @@
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const { query } = require('../config/db');
-require('dotenv').config();
+const bcrypt = require('bcryptjs');
+const { query } = require('../db');
 
+// تسجيل الدخول
 const login = async (req, res) => {
   try {
     const { email, password } = req.body;
 
     if (!email || !password) {
-      return res.status(400).json({ success: false, message: 'الإيميل وكلمة المرور مطلوبين' });
+      return res.status(400).json({ success: false, message: 'يرجى إدخال البريد الإلكتروني وكلمة المرور' });
     }
 
-    const result = await query('SELECT * FROM admins WHERE email = $1', [email.toLowerCase().trim()]);
+    const result = await query('SELECT * FROM admins WHERE email = $1', [email]);
     if (result.rows.length === 0) {
       return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
     }
 
     const admin = result.rows[0];
-    const valid = await bcrypt.compare(password, admin.password_hash);
-    if (!valid) {
+    const isMatch = await bcrypt.compare(password, admin.password_hash);
+    if (!isMatch) {
       return res.status(401).json({ success: false, message: 'بيانات الدخول غير صحيحة' });
     }
 
@@ -29,39 +29,49 @@ const login = async (req, res) => {
     );
 
     res.cookie('token', token, {
-        httpOnly: true,
-        secure: true,
-        sameSite: 'none',
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 
-    res.json({
+    return res.json({
       success: true,
       message: 'تم تسجيل الدخول بنجاح',
       token,
       admin: { id: admin.id, email: admin.email, name: admin.name },
     });
   } catch (err) {
-    console.error('Login error:', err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة، حاول بعد شوية.' });
+    return res.status(500).json({ success: false, message: 'حدث خطأ في السيرفر' });
   }
 };
 
-const logout = (req, res) => {
-  res.clearCookie('token');
-  res.json({ success: true, message: 'تم تسجيل الخروج' });
+// تسجيل الخروج
+const logout = async (req, res) => {
+  try {
+    res.clearCookie('token');
+    return res.json({ success: true, message: 'تم تسجيل الخروج بنجاح' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: 'حدث خطأ أثناء تسجيل الخروج' });
+  }
 };
 
+// التحقق من بيانات الأدمن الحالي
 const me = async (req, res) => {
   try {
     const result = await query('SELECT id, email, name FROM admins WHERE id = $1', [req.admin.id]);
     if (result.rows.length === 0) {
       return res.status(401).json({ success: false, message: 'غير مصرح' });
     }
-    res.json({ success: true, admin: result.rows[0] });
+    return res.json({ success: true, admin: result.rows[0] });
   } catch (err) {
-    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة' });
+    return res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة' });
   }
 };
 
-module.exports = { login, logout, me };
+module.exports = {
+  login,
+  logout,
+  me,
+  getMe: me
+};
