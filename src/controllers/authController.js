@@ -24,7 +24,7 @@ const login = async (req, res) => {
 
     const token = jwt.sign(
       { id: admin.id, email: admin.email, name: admin.name },
-      process.env.JWT_SECRET,
+      process.env.JWT_SECRET || 'lamsa_secret_key_2026_super_secure',
       { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
