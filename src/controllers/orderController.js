@@ -19,25 +19,23 @@ const createOrder = async (req, res) => {
 
     await client.query('BEGIN');
 
-    // تجهيز القيم الاختيارية والمصفوفات
     const finalLocation = state || location || 'غير محدد';
-    const finalPhone = phone ? phone.trim() : '';
-    const finalWhatsapp = whatsapp ? whatsapp.trim() : finalPhone;
-    const finalAddress = address ? address.trim() : 'غير محدد';
-    const finalColor = color ? color.trim() : 'غير محدد';
-    const finalSize = size ? size.trim() : 'غير محدد';
+    const finalPhone = phone ? String(phone).trim() : '';
+    const finalWhatsapp = whatsapp ? String(whatsapp).trim() : finalPhone;
+    const finalAddress = address ? String(address).trim() : 'غير محدد';
+    const finalColor = color ? String(color).trim() : 'غير محدد';
+    const finalSize = size ? String(size).trim() : 'L';
     const qty = parseInt(quantity || 1, 10);
     const imagesArray = Array.isArray(selected_images) ? selected_images : [];
 
-    // إدراج الطلب الجديد في قاعدة البيانات
     const orderRes = await client.query(
       `INSERT INTO orders (
         customer_name, phone, whatsapp, location, state, address,
         color, size, quantity, total_price, selected_images, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'جديد')
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::text[], 'جديد')
       RETURNING *`,
       [
-        customer_name ? customer_name.trim() : 'عميل',
+        customer_name ? String(customer_name).trim() : 'عميل',
         finalPhone,
         finalWhatsapp,
         finalLocation,
