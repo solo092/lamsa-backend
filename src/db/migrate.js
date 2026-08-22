@@ -43,19 +43,34 @@ const migrate = async () => {
         id SERIAL PRIMARY KEY,
         customer_name VARCHAR(255) NOT NULL,
         phone VARCHAR(50) NOT NULL,
-        whatsapp VARCHAR(50) NOT NULL,
-        location VARCHAR(100) NOT NULL,
-        address TEXT NOT NULL,
+        whatsapp VARCHAR(50),
+        location VARCHAR(100),
+        state VARCHAR(100),
+        address TEXT,
         product_id INTEGER REFERENCES products(id) ON DELETE SET NULL,
-        product_name_snapshot VARCHAR(255) NOT NULL,
-        size VARCHAR(20) NOT NULL,
-        quantity INTEGER NOT NULL CHECK (quantity > 0),
-        unit_price DECIMAL(12, 2) NOT NULL,
+        product_name_snapshot VARCHAR(255),
+        color VARCHAR(50),
+        size VARCHAR(20),
+        quantity INTEGER DEFAULT 1,
+        unit_price DECIMAL(12, 2) DEFAULT 0,
         total_price DECIMAL(12, 2) NOT NULL,
+        selected_images TEXT[] DEFAULT '{}',
         status VARCHAR(50) NOT NULL DEFAULT 'جديد',
         created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
       );
+    `);
+
+    // إضافة الأعمدة الجديدة تلقائياً للجدول المباشر
+    await client.query(`
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS state VARCHAR(100);
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS color VARCHAR(50);
+      ALTER TABLE orders ADD COLUMN IF NOT EXISTS selected_images TEXT[] DEFAULT '{}';
+      ALTER TABLE orders ALTER COLUMN whatsapp DROP NOT NULL;
+      ALTER TABLE orders ALTER COLUMN location DROP NOT NULL;
+      ALTER TABLE orders ALTER COLUMN product_name_snapshot DROP NOT NULL;
+      ALTER TABLE orders ALTER COLUMN size DROP NOT NULL;
+      ALTER TABLE orders ALTER COLUMN address DROP NOT NULL;
     `);
 
     await client.query(`
