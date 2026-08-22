@@ -27,7 +27,7 @@ const orderValidation = [
     .notEmpty().withMessage('العنوان مطلوب')
     .isLength({ min: 5, max: 500 }).withMessage('العنوان لازم يكون مفصل أكثر'),
   body('product_id')
-    .optional(), // جعل الحقل اختياري لتفادي تحويله لـ Integer
+    .optional(),
   body('size')
     .isIn(['L', 'XL', 'XXL', 'XXXL']).withMessage('المقاس غير صحيح'),
   body('quantity')
