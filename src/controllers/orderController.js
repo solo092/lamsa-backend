@@ -7,75 +7,48 @@ const createOrder = async (req, res) => {
       customer_name,
       phone,
       whatsapp,
+      state,
+      location,
       address,
-      product_id,
+      color,
       size,
       quantity,
-      location,
+      total_price,
+      selected_images
     } = req.body;
 
     await client.query('BEGIN');
 
-    // Lock product row
-    const productRes = await client.query(
-      'SELECT * FROM products WHERE id = $1 AND is_active = TRUE FOR UPDATE',
-      [product_id]
-    );
+    // تجهيز القيم الاختيارية والمصفوفات
+    const finalLocation = state || location || 'غير محدد';
+    const finalPhone = phone ? phone.trim() : '';
+    const finalWhatsapp = whatsapp ? whatsapp.trim() : finalPhone;
+    const finalAddress = address ? address.trim() : 'غير محدد';
+    const finalColor = color ? color.trim() : 'غير محدد';
+    const finalSize = size ? size.trim() : 'غير محدد';
+    const qty = parseInt(quantity || 1, 10);
+    const imagesArray = Array.isArray(selected_images) ? selected_images : [];
 
-    if (productRes.rows.length === 0) {
-      await client.query('ROLLBACK');
-      return res.status(404).json({ success: false, message: 'المعروض دا خلص حالياً.' });
-    }
-
-    const product = productRes.rows[0];
-
-    if (product.location !== location) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({ success: false, message: 'المنتج غير متوفر في منطقتك.' });
-    }
-
-    const qty = parseInt(quantity, 10);
-    if (product.quantity < qty) {
-      await client.query('ROLLBACK');
-      return res.status(400).json({
-        success: false,
-        message: product.quantity === 0
-          ? 'المعروض دا خلص حالياً.'
-          : `الكمية المتوفرة حالياً ${product.quantity} فقط.`,
-      });
-    }
-
-    // Server-side price calculation
-    const unit_price = parseFloat(product.price);
-    const total_price = unit_price * qty;
-
-    // Create order with snapshot
+    // إدراج الطلب الجديد في قاعدة البيانات
     const orderRes = await client.query(
       `INSERT INTO orders (
-        customer_name, phone, whatsapp, location, address,
-        product_id, product_name_snapshot, size, quantity,
-        unit_price, total_price, status
-      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'جديد')
+        customer_name, phone, whatsapp, location, state, address,
+        color, size, quantity, total_price, selected_images, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, 'جديد')
       RETURNING *`,
       [
-        customer_name.trim(),
-        phone.trim(),
-        whatsapp.trim(),
-        location,
-        address.trim(),
-        product.id,
-        product.name,
-        size,
+        customer_name ? customer_name.trim() : 'عميل',
+        finalPhone,
+        finalWhatsapp,
+        finalLocation,
+        finalLocation,
+        finalAddress,
+        finalColor,
+        finalSize,
         qty,
-        unit_price,
-        total_price,
+        parseFloat(total_price || 0),
+        imagesArray
       ]
-    );
-
-    // Reduce stock
-    await client.query(
-      'UPDATE products SET quantity = quantity - $1, updated_at = NOW() WHERE id = $2',
-      [qty, product.id]
     );
 
     await client.query('COMMIT');
@@ -97,10 +70,7 @@ const createOrder = async (req, res) => {
 const getAllOrders = async (req, res) => {
   try {
     const result = await query(
-      `SELECT o.*, p.image_urls as product_images
-       FROM orders o
-       LEFT JOIN products p ON o.product_id = p.id
-       ORDER BY o.created_at DESC`
+      `SELECT * FROM orders ORDER BY created_at DESC`
     );
     res.json({ success: true, orders: result.rows });
   } catch (err) {
@@ -113,10 +83,7 @@ const getOrderById = async (req, res) => {
   try {
     const { id } = req.params;
     const result = await query(
-      `SELECT o.*, p.image_urls as product_images
-       FROM orders o
-       LEFT JOIN products p ON o.product_id = p.id
-       WHERE o.id = $1`,
+      `SELECT * FROM orders WHERE id = $1`,
       [id]
     );
     if (result.rows.length === 0) {
