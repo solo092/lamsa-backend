@@ -13,6 +13,7 @@ const createOrder = async (req, res) => {
       color,
       size,
       quantity,
+      unit_price,
       total_price,
       selected_images
     } = req.body;
@@ -26,13 +27,14 @@ const createOrder = async (req, res) => {
     const finalColor = color ? String(color).trim() : 'غير محدد';
     const finalSize = size ? String(size).trim() : 'L';
     const qty = parseInt(quantity || 1, 10);
+    const finalUnitPrice = parseFloat(unit_price || total_price || 0);
     const imagesArray = Array.isArray(selected_images) ? selected_images : [];
 
     const orderRes = await client.query(
       `INSERT INTO orders (
         customer_name, phone, whatsapp, location, state, address,
-        color, size, quantity, total_price, selected_images, status
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11::text[], 'جديد')
+        color, size, quantity, unit_price, total_price, selected_images, status
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::text[], 'جديد')
       RETURNING *`,
       [
         customer_name ? String(customer_name).trim() : 'عميل',
@@ -44,6 +46,7 @@ const createOrder = async (req, res) => {
         finalColor,
         finalSize,
         qty,
+        finalUnitPrice,
         parseFloat(total_price || 0),
         imagesArray
       ]
@@ -96,7 +99,7 @@ const getOrderById = async (req, res) => {
 
 const updateOrderStatus = async (req, res) => {
   try {
-    const { id } = req.params;
+const { id } = req.params;
     const { status } = req.body;
 
     const result = await query(
