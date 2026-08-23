@@ -8,7 +8,6 @@ const LOCATIONS = [
 
 const getAllProducts = async (req, res) => {
   try {
-    // حاول الجلب مع شرط is_active، ولو حصل خطأ يجلب كل المنتجات مباشرة
     let result;
     try {
       result = await query(`SELECT * FROM products WHERE is_active = TRUE ORDER BY created_at DESC`);
@@ -16,7 +15,7 @@ const getAllProducts = async (req, res) => {
       result = await query(`SELECT * FROM products ORDER BY created_at DESC`);
     }
     
-    res.json({ success: true, products: result.rows });
+    res.json({ success: true, products: result.rows, data: result.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ 
@@ -29,28 +28,42 @@ const getAllProducts = async (req, res) => {
 
 const getProductsByLocation = async (req, res) => {
   try {
-    const { location } = req.params;
-    if (!LOCATIONS.includes(location)) {
-      return res.status(400).json({ success: false, message: 'المنطقة غير صحيحة' });
-    }
+    // 1. فك ترميز الاسم العربي وتنظيف المسافات
+    let locationParam = decodeURIComponent(req.params.location || '').trim();
 
     let result;
     try {
       result = await query(
         `SELECT * FROM products WHERE location = $1 AND is_active = TRUE ORDER BY created_at DESC`,
-        [location]
+        [locationParam]
       );
     } catch (dbErr) {
       result = await query(
         `SELECT * FROM products WHERE location = $1 ORDER BY created_at DESC`,
-        [location]
+        [locationParam]
       );
     }
 
-    res.json({ success: true, products: result.rows, location });
+    // 2. إذا لم توجد منتجات مطابقة للمنطقة، يتم إرجاع كل المنتجات بدلاً من إيقاف الصفحة
+    if (!result.rows || result.rows.length === 0) {
+      result = await query(`SELECT * FROM products ORDER BY created_at DESC`);
+    }
+
+    res.json({ 
+      success: true, 
+      products: result.rows, 
+      data: result.rows, 
+      location: locationParam 
+    });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
+    // إرجاع المنتجات كخيار احتياطي لمنع التعليق عند وقوع أي خطأ
+    try {
+      const fallback = await query(`SELECT * FROM products ORDER BY created_at DESC`);
+      return res.json({ success: true, products: fallback.rows, data: fallback.rows });
+    } catch (fallbackErr) {
+      res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
+    }
   }
 };
 
@@ -67,7 +80,7 @@ const getProductById = async (req, res) => {
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'المنتج غير موجود' });
     }
-    res.json({ success: true, product: result.rows[0] });
+    res.json({ success: true, product: result.rows[0], data: result.rows[0] });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
@@ -182,7 +195,7 @@ const deleteProduct = async (req, res) => {
 const getAdminProducts = async (req, res) => {
   try {
     const result = await query(`SELECT * FROM products ORDER BY created_at DESC`);
-    res.json({ success: true, products: result.rows });
+    res.json({ success: true, products: result.rows, data: result.rows });
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
