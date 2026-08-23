@@ -1,6 +1,4 @@
 require('dotenv').config();
-require('./db/migrate');
-require('./db/seed');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -14,13 +12,13 @@ const orderRoutes = require('./routes/orders');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security (تعطيل القيود التي تمنع طلبات الهواتف)
+// Security
 app.use(helmet({
   crossOriginResourcePolicy: false,
   crossOriginEmbedderPolicy: false,
 }));
 
-// CORS مسموح للجميع لحل أي تعارض شبكة فوراً
+// CORS
 app.use(cors({
   origin: true,
   credentials: true,
@@ -32,6 +30,22 @@ app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// مسار تلقائي لتجهيز قاعدة البيانات والجداول عبر المتصفح
+app.get('/api/setup-db', async (req, res) => {
+  try {
+    const migrate = require('./db/migrate');
+    const seed = require('./db/seed');
+
+    if (typeof migrate === 'function') await migrate();
+    if (typeof seed === 'function') await seed();
+
+    res.json({ success: true, message: 'تم إنشاء الجداول وتنزيل البيانات المبدئية بنجاح!' });
+  } catch (error) {
+    console.error('Database Setup Error:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
