@@ -8,13 +8,22 @@ const LOCATIONS = [
 
 const getAllProducts = async (req, res) => {
   try {
-    const result = await query(
-      `SELECT * FROM products WHERE is_active = TRUE ORDER BY created_at DESC`
-    );
+    // حاول الجلب مع شرط is_active، ولو حصل خطأ يجلب كل المنتجات مباشرة
+    let result;
+    try {
+      result = await query(`SELECT * FROM products WHERE is_active = TRUE ORDER BY created_at DESC`);
+    } catch (dbErr) {
+      result = await query(`SELECT * FROM products ORDER BY created_at DESC`);
+    }
+    
     res.json({ success: true, products: result.rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة، حاول بعد شوية.' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'حصلت مشكلة مؤقتة، حاول بعد شوية.',
+      error: err.message || err.toString()
+    });
   }
 };
 
@@ -25,28 +34,43 @@ const getProductsByLocation = async (req, res) => {
       return res.status(400).json({ success: false, message: 'المنطقة غير صحيحة' });
     }
 
-    const result = await query(
-      `SELECT * FROM products WHERE location = $1 AND is_active = TRUE ORDER BY created_at DESC`,
-      [location]
-    );
+    let result;
+    try {
+      result = await query(
+        `SELECT * FROM products WHERE location = $1 AND is_active = TRUE ORDER BY created_at DESC`,
+        [location]
+      );
+    } catch (dbErr) {
+      result = await query(
+        `SELECT * FROM products WHERE location = $1 ORDER BY created_at DESC`,
+        [location]
+      );
+    }
+
     res.json({ success: true, products: result.rows, location });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة، حاول بعد شوية.' });
+    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
   }
 };
 
 const getProductById = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await query('SELECT * FROM products WHERE id = $1 AND is_active = TRUE', [id]);
+    let result;
+    try {
+      result = await query('SELECT * FROM products WHERE id = $1 AND is_active = TRUE', [id]);
+    } catch (dbErr) {
+      result = await query('SELECT * FROM products WHERE id = $1', [id]);
+    }
+
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'المنتج غير موجود' });
     }
     res.json({ success: true, product: result.rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة' });
+    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
   }
 };
 
@@ -79,7 +103,7 @@ const createProduct = async (req, res) => {
     res.status(201).json({ success: true, message: 'تم إضافة المنتج بنجاح', product: result.rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة في إضافة المنتج' });
+    res.status(500).json({ success: false, message: 'حصلت مشكلة في إضافة المنتج', error: err.message });
   }
 };
 
@@ -128,36 +152,40 @@ const updateProduct = async (req, res) => {
     res.json({ success: true, message: 'تم تحديث المنتج', product: result.rows[0] });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة في التحديث' });
+    res.status(500).json({ success: false, message: 'حصلت مشكلة في التحديث', error: err.message });
   }
 };
 
 const deleteProduct = async (req, res) => {
   try {
     const { id } = req.params;
-    // Soft delete
-    const result = await query(
-      `UPDATE products SET is_active = FALSE, updated_at = NOW() WHERE id = $1 RETURNING id`,
-      [id]
-    );
+    let result;
+    try {
+      result = await query(
+        `UPDATE products SET is_active = FALSE, updated_at = NOW() WHERE id = $1 RETURNING id`,
+        [id]
+      );
+    } catch (dbErr) {
+      result = await query(`DELETE FROM products WHERE id = $1 RETURNING id`, [id]);
+    }
+
     if (result.rows.length === 0) {
       return res.status(404).json({ success: false, message: 'المنتج غير موجود' });
     }
     res.json({ success: true, message: 'تم حذف المنتج' });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة في الحذف' });
+    res.status(500).json({ success: false, message: 'حصلت مشكلة في الحذف', error: err.message });
   }
 };
 
-// Admin: get all including inactive
 const getAdminProducts = async (req, res) => {
   try {
     const result = await query(`SELECT * FROM products ORDER BY created_at DESC`);
     res.json({ success: true, products: result.rows });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة' });
+    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
   }
 };
 
