@@ -1,4 +1,6 @@
 require('dotenv').config();
+require('./db/migrate');
+require('./db/seed');
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
