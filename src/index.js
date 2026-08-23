@@ -62,13 +62,17 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: 'المسار غير موجود' });
 });
 
-// Error handler
+// Error handler (تعديل لإظهار تفاصيل الخطأ المباشرة)
 app.use((err, req, res, next) => {
   console.error(err.stack);
   if (err.message === 'فقط الصور مسموحة') {
     return res.status(400).json({ success: false, message: err.message });
   }
-  res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة، حاول بعد شوية.' });
+  res.status(500).json({ 
+    success: false, 
+    message: err.message || 'حصلت مشكلة مؤقتة، حاول بعد شوية.',
+    error: err.toString()
+  });
 });
 
 app.listen(PORT, () => {
