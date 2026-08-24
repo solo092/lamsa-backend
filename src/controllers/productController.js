@@ -28,7 +28,7 @@ const getAllProducts = async (req, res) => {
 
 const getProductsByLocation = async (req, res) => {
   try {
-    // 1. فك ترميز الاسم العربي وتنظيف المسافات
+    // فك ترميز الاسم العربي وتنظيف المسافات
     let locationParam = decodeURIComponent(req.params.location || '').trim();
 
     let result;
@@ -44,10 +44,10 @@ const getProductsByLocation = async (req, res) => {
       );
     }
 
-    // 2. إذا لم توجد منتجات مطابقة للمنطقة، يتم إرجاع كل المنتجات بدلاً من إيقاف الصفحة
-    if (!result.rows || result.rows.length === 0) {
-      result = await query(`SELECT * FROM products ORDER BY created_at DESC`);
-    }
+    // ملاحظة: هنا تم حذف الكود الذي كان يرجّع كل المنتجات عند عدم وجود
+    // نتائج للولاية المطلوبة — كان هذا هو سبب ظهور منتجات كل الولايات
+    // في كل مكان. الآن الدالة ترجّع فقط منتجات الولاية المطلوبة،
+    // حتى لو كانت القائمة فاضية.
 
     res.json({ 
       success: true, 
@@ -57,13 +57,7 @@ const getProductsByLocation = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    // إرجاع المنتجات كخيار احتياطي لمنع التعليق عند وقوع أي خطأ
-    try {
-      const fallback = await query(`SELECT * FROM products ORDER BY created_at DESC`);
-      return res.json({ success: true, products: fallback.rows, data: fallback.rows });
-    } catch (fallbackErr) {
-      res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
-    }
+    res.status(500).json({ success: false, message: 'حصلت مشكلة مؤقتة', error: err.message });
   }
 };
 
