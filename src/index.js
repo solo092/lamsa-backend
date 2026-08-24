@@ -12,19 +12,25 @@ const orderRoutes = require('./routes/orders');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Security
-app.use(helmet({
-  crossOriginResourcePolicy: false,
-  crossOriginEmbedderPolicy: false,
-}));
+// 1. تعديل Helmet لعدم حجب الـ CORS وطلبات المتصفحات الخارجية
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginEmbedderPolicy: false,
+    contentSecurityPolicy: false, // يمنع حجب جلب البيانات والصور من مصادر خارجية
+  })
+);
 
-// CORS
-app.use(cors({
-  origin: true,
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin']
-}));
+// 2. ضبط CORS شاملاً لجميع المصادر والـ Preflight requests
+app.use(
+  cors({
+    origin: '*', // السماح لأي دُومين بالوصول للـ API
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  })
+);
+
+app.options('*', cors()); // الاستجابة المباشرة لطلبات OPTIONS
 
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 app.use(express.json({ limit: '10mb' }));
@@ -62,7 +68,7 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: 'المسار غير موجود' });
 });
 
-// Error handler (تعديل لإظهار تفاصيل الخطأ المباشرة)
+// Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   if (err.message === 'فقط الصور مسموحة') {
