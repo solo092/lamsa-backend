@@ -12,7 +12,7 @@ const pool = new Pool({
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 10000,
 });
-console.log('DB host:', (connectionString || '').split('@')[1]?.split('/')[0]);
+
 pool.on('error', (err) => {
   console.error('Unexpected error on idle client', err);
 });
